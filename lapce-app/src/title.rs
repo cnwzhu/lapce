@@ -15,7 +15,7 @@ use lapce_core::meta;
 use lapce_rpc::proxy::ProxyStatus;
 
 use crate::{
-    app::{clickable_icon, not_clickable_icon, tooltip_label, window_menu},
+    app::{clickable_icon, not_clickable_icon, tooltip_label},
     command::{LapceCommand, LapceWorkbenchCommand, WindowCommand},
     config::{LapceConfig, color::LapceColor, icon::LapceIcons},
     listener::Listener,
@@ -35,6 +35,7 @@ fn left(
 ) -> impl View {
     let is_local = workspace.kind.is_local();
     let is_macos = cfg!(target_os = "macos");
+
     stack((
         empty().style(move |s| {
             let should_hide = if is_macos {
@@ -52,16 +53,69 @@ fn left(
             },
         ))
         .style(move |s| s.margin_horiz(10.0).apply_if(is_macos, |s| s.hide())),
-        not_clickable_icon(
-            || LapceIcons::MENU,
-            || false,
-            || false,
-            || "Menu",
-            config,
-        )
-        .popout_menu(move || window_menu(lapce_command, workbench_command))
+        stack((
+            label(|| "File".to_string())
+                .style(move |s| {
+                    let config = config.get();
+                    s.padding_horiz(10.0)
+                        .items_center()
+                        .height_pct(100.0)
+                        .cursor(CursorStyle::Pointer)
+                        .hover(|s| {
+                            s.background(
+                                config.color(LapceColor::PANEL_HOVERED_BACKGROUND),
+                            )
+                        })
+                })
+                .popout_menu(move || {
+                    file_menu_native(lapce_command, workbench_command)
+                }),
+            label(|| "Edit".to_string())
+                .style(move |s| {
+                    let config = config.get();
+                    s.padding_horiz(10.0)
+                        .items_center()
+                        .height_pct(100.0)
+                        .cursor(CursorStyle::Pointer)
+                        .hover(|s| {
+                            s.background(
+                                config.color(LapceColor::PANEL_HOVERED_BACKGROUND),
+                            )
+                        })
+                })
+                .popout_menu(move || edit_menu_native(lapce_command)),
+            label(|| "Run".to_string())
+                .style(move |s| {
+                    let config = config.get();
+                    s.padding_horiz(10.0)
+                        .items_center()
+                        .height_pct(100.0)
+                        .cursor(CursorStyle::Pointer)
+                        .hover(|s| {
+                            s.background(
+                                config.color(LapceColor::PANEL_HOVERED_BACKGROUND),
+                            )
+                        })
+                })
+                .popout_menu(move || run_menu_native(workbench_command)),
+            label(|| "Help".to_string())
+                .style(move |s| {
+                    let config = config.get();
+                    s.padding_horiz(10.0)
+                        .items_center()
+                        .height_pct(100.0)
+                        .cursor(CursorStyle::Pointer)
+                        .hover(|s| {
+                            s.background(
+                                config.color(LapceColor::PANEL_HOVERED_BACKGROUND),
+                            )
+                        })
+                })
+                .popout_menu(move || help_menu_native(workbench_command)),
+        ))
         .style(move |s| {
-            s.margin_left(4.0)
+            s.height_pct(100.0)
+                .items_center()
                 .margin_right(6.0)
                 .apply_if(is_macos, |s| s.hide())
         }),
@@ -417,6 +471,112 @@ fn right(
     .debug_name("Right of top bar")
 }
 
+// Native menu functions for popout_menu (uses OS-native context menu)
+fn file_menu_native(
+    lapce_command: Listener<LapceCommand>,
+    workbench_command: Listener<LapceWorkbenchCommand>,
+) -> Menu {
+    use crate::command::CommandKind;
+    use lapce_core::command::FocusCommand;
+
+    Menu::new("")
+        .entry(MenuItem::new("New File").action(move || {
+            workbench_command.send(LapceWorkbenchCommand::NewFile);
+        }))
+        .separator()
+        .entry(MenuItem::new("Open").action(move || {
+            workbench_command.send(LapceWorkbenchCommand::OpenFile);
+        }))
+        .entry(MenuItem::new("Open Folder").action(move || {
+            workbench_command.send(LapceWorkbenchCommand::OpenFolder);
+        }))
+        .separator()
+        .entry(MenuItem::new("Save").action(move || {
+            lapce_command.send(LapceCommand {
+                kind: CommandKind::Focus(FocusCommand::Save),
+                data: None,
+            });
+        }))
+        .entry(MenuItem::new("Save All").action(move || {
+            workbench_command.send(LapceWorkbenchCommand::SaveAll);
+        }))
+        .separator()
+        .entry(MenuItem::new("Close Folder").action(move || {
+            workbench_command.send(LapceWorkbenchCommand::CloseFolder);
+        }))
+        .entry(MenuItem::new("Close Window").action(move || {
+            workbench_command.send(LapceWorkbenchCommand::CloseWindow);
+        }))
+        .separator()
+        .entry(MenuItem::new("Open Settings").action(move || {
+            workbench_command.send(LapceWorkbenchCommand::OpenSettings);
+        }))
+        .entry(MenuItem::new("Open Keyboard Shortcuts").action(move || {
+            workbench_command.send(LapceWorkbenchCommand::OpenKeyboardShortcuts);
+        }))
+        .separator()
+        .entry(MenuItem::new("Quit").action(move || {
+            workbench_command.send(LapceWorkbenchCommand::Quit);
+        }))
+}
+
+fn edit_menu_native(lapce_command: Listener<LapceCommand>) -> Menu {
+    use crate::command::CommandKind;
+    use lapce_core::command::{EditCommand, FocusCommand};
+
+    Menu::new("")
+        .entry(MenuItem::new("Undo").action(move || {
+            lapce_command.send(LapceCommand {
+                kind: CommandKind::Edit(EditCommand::Undo),
+                data: None,
+            });
+        }))
+        .entry(MenuItem::new("Redo").action(move || {
+            lapce_command.send(LapceCommand {
+                kind: CommandKind::Edit(EditCommand::Redo),
+                data: None,
+            });
+        }))
+        .separator()
+        .entry(MenuItem::new("Cut").action(move || {
+            lapce_command.send(LapceCommand {
+                kind: CommandKind::Edit(EditCommand::ClipboardCut),
+                data: None,
+            });
+        }))
+        .entry(MenuItem::new("Copy").action(move || {
+            lapce_command.send(LapceCommand {
+                kind: CommandKind::Edit(EditCommand::ClipboardCopy),
+                data: None,
+            });
+        }))
+        .entry(MenuItem::new("Paste").action(move || {
+            lapce_command.send(LapceCommand {
+                kind: CommandKind::Edit(EditCommand::ClipboardPaste),
+                data: None,
+            });
+        }))
+        .separator()
+        .entry(MenuItem::new("Find").action(move || {
+            lapce_command.send(LapceCommand {
+                kind: CommandKind::Focus(FocusCommand::Search),
+                data: None,
+            });
+        }))
+}
+
+fn run_menu_native(workbench_command: Listener<LapceWorkbenchCommand>) -> Menu {
+    Menu::new("").entry(MenuItem::new("Run and Debug").action(move || {
+        workbench_command.send(LapceWorkbenchCommand::PaletteRunAndDebug);
+    }))
+}
+
+fn help_menu_native(workbench_command: Listener<LapceWorkbenchCommand>) -> Menu {
+    Menu::new("").entry(MenuItem::new("About Lapce").action(move || {
+        workbench_command.send(LapceWorkbenchCommand::ShowAbout);
+    }))
+}
+
 pub fn title(window_tab_data: Rc<WindowTabData>) -> impl View {
     let workspace = window_tab_data.workspace.clone();
     let lapce_command = window_tab_data.common.lapce_command;
@@ -429,6 +589,7 @@ pub fn title(window_tab_data: Rc<WindowTabData>) -> impl View {
     let title_height = window_tab_data.title_height;
     let update_in_progress = window_tab_data.update_in_progress;
     let config = window_tab_data.common.config;
+
     stack((
         left(
             workspace.clone(),
