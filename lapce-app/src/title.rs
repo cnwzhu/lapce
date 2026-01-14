@@ -20,6 +20,7 @@ use crate::{
     config::{LapceConfig, color::LapceColor, icon::LapceIcons},
     listener::Listener,
     main_split::MainSplitData,
+    panel::position::PanelContainerPosition,
     update::ReleaseInfo,
     window_tab::WindowTabData,
     workspace::LapceWorkspace,
@@ -359,6 +360,7 @@ fn middle(
 }
 
 fn right(
+    window_tab_data: Rc<WindowTabData>,
     window_command: Listener<WindowCommand>,
     workbench_command: Listener<LapceWorkbenchCommand>,
     latest_release: ReadSignal<Arc<Option<ReleaseInfo>>>,
@@ -385,6 +387,90 @@ fn right(
     stack((
         drag_window_area(empty())
             .style(|s| s.height_pct(100.0).flex_basis(0.0).flex_grow(1.0)),
+        stack((
+            {
+                let panel = window_tab_data.panel.clone();
+                let icon = {
+                    let panel = panel.clone();
+                    move || {
+                        if panel
+                            .is_container_shown(&PanelContainerPosition::Left, true)
+                        {
+                            LapceIcons::SIDEBAR_LEFT
+                        } else {
+                            LapceIcons::SIDEBAR_LEFT_OFF
+                        }
+                    }
+                };
+                clickable_icon(
+                    icon,
+                    move || {
+                        panel.toggle_container_visual(&PanelContainerPosition::Left)
+                    },
+                    || false,
+                    || false,
+                    || "Toggle Left Panel",
+                    config,
+                )
+            },
+            {
+                let panel = window_tab_data.panel.clone();
+                let icon = {
+                    let panel = panel.clone();
+                    move || {
+                        if panel.is_container_shown(
+                            &PanelContainerPosition::Bottom,
+                            true,
+                        ) {
+                            LapceIcons::LAYOUT_PANEL
+                        } else {
+                            LapceIcons::LAYOUT_PANEL_OFF
+                        }
+                    }
+                };
+                clickable_icon(
+                    icon,
+                    move || {
+                        panel
+                            .toggle_container_visual(&PanelContainerPosition::Bottom)
+                    },
+                    || false,
+                    || false,
+                    || "Toggle Bottom Panel",
+                    config,
+                )
+            },
+            {
+                let panel = window_tab_data.panel.clone();
+                let icon = {
+                    let panel = panel.clone();
+                    move || {
+                        if panel
+                            .is_container_shown(&PanelContainerPosition::Right, true)
+                        {
+                            LapceIcons::SIDEBAR_RIGHT
+                        } else {
+                            LapceIcons::SIDEBAR_RIGHT_OFF
+                        }
+                    }
+                };
+                clickable_icon(
+                    icon,
+                    move || {
+                        panel.toggle_container_visual(&PanelContainerPosition::Right)
+                    },
+                    || false,
+                    || false,
+                    || "Toggle Right Panel",
+                    config,
+                )
+            },
+        ))
+        .style(move |s| {
+            s.height_pct(100.0)
+                .items_center()
+                .color(config.get().color(LapceColor::LAPCE_ICON_ACTIVE))
+        }),
         stack((
             not_clickable_icon(
                 || LapceIcons::SETTINGS,
@@ -606,6 +692,7 @@ pub fn title(window_tab_data: Rc<WindowTabData>) -> impl View {
             config,
         ),
         right(
+            window_tab_data.clone(),
             window_command,
             workbench_command,
             latest_release,
