@@ -1252,9 +1252,6 @@ impl WindowTabData {
             ToggleSourceControlFocus => {
                 self.toggle_panel_focus(PanelKind::SourceControl);
             }
-            TogglePluginFocus => {
-                self.toggle_panel_focus(PanelKind::Plugin);
-            }
             ToggleFileExplorerFocus => {
                 self.toggle_panel_focus(PanelKind::FileExplorer);
             }
@@ -1269,9 +1266,6 @@ impl WindowTabData {
             }
             ToggleSourceControlVisual => {
                 self.toggle_panel_visual(PanelKind::SourceControl);
-            }
-            TogglePluginVisual => {
-                self.toggle_panel_visual(PanelKind::Plugin);
             }
             ToggleFileExplorerVisual => {
                 self.toggle_panel_visual(PanelKind::FileExplorer);
@@ -2339,9 +2333,6 @@ impl WindowTabData {
             Focus::Panel(PanelKind::Search) => {
                 Some(keypress.key_down(event, &self.global_search))
             }
-            Focus::Panel(PanelKind::Plugin) => {
-                Some(keypress.key_down(event, &self.plugin))
-            }
             Focus::Panel(PanelKind::SourceControl) => {
                 Some(keypress.key_down(event, &self.source_control))
             }
@@ -2620,7 +2611,6 @@ impl WindowTabData {
     fn toggle_panel_focus(&self, kind: PanelKind) {
         let should_hide = match kind {
             PanelKind::FileExplorer
-            | PanelKind::Plugin
             | PanelKind::Problem
             | PanelKind::CallHierarchy
             | PanelKind::DocumentSymbol
