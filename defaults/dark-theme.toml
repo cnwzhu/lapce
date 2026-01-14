@@ -85,7 +85,7 @@ dim-text = "#5C6370"
 "lapce.error" = "$red"
 "lapce.warn" = "$yellow"
 "lapce.dropdown_shadow" = "#00000051"
-"lapce.border" = "#000000"
+"lapce.border" = "#FFFFFF26"
 "lapce.scroll_bar" = "#3E4451BB"
 
 "lapce.button.primary.background" = "#50a14f"
