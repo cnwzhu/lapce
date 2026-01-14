@@ -37,29 +37,36 @@
           openssl
           zlib
           libgit2
+          zstd
           
-          # GUI 依赖 (Floem/GPUI 需要)
+          # GUI 依赖 (Floem 需要)
           xorg.libX11
           xorg.libXcursor
           xorg.libXrandr
           xorg.libXi
           xorg.libxcb
+          xorg.xcbutil
+          xorg.xcbutilimage
           libxkbcommon
           
           # Wayland 支持
           wayland
           
-          # 渲染依赖
+          # 渲染依赖 (根据 docker-bake.hcl)
           vulkan-loader
           vulkan-headers
-          vulkan-validation-layers
+          # vulkan-validation-layers  # 暂时禁用，可能与系统驱动冲突
+          
+          # OpenGL/EGL 支持 (wgpu 需要)
+          libGL
+          libglvnd  # OpenGL 供应商中立调度库
+          mesa      # 提供 EGL 和 OpenGL 实现
           
           # 字体相关
           fontconfig
           freetype
           
           # 其他依赖
-          libGL
           expat
           
         ] ++ lib.optionals stdenv.isLinux [
@@ -87,6 +94,8 @@
         libraryPath = with pkgs; lib.makeLibraryPath ([
           vulkan-loader
           libGL
+          libglvnd
+          mesa
           libxkbcommon
           wayland
           xorg.libX11
@@ -107,9 +116,16 @@
             export LD_LIBRARY_PATH="${libraryPath}:$LD_LIBRARY_PATH"
             export PKG_CONFIG_PATH="${pkgs.openssl.dev}/lib/pkgconfig:${pkgs.fontconfig.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
             
-            # Vulkan 配置
-            export VK_LAYER_PATH="${pkgs.vulkan-validation-layers}/share/vulkan/explicit_layer.d"
-            export VK_ICD_FILENAMES="${pkgs.vulkan-loader}/share/vulkan/icd.d/intel_icd.x86_64.json"
+            # 图形后端配置
+            # 让 wgpu 自动选择最佳后端（Vulkan/OpenGL/GLES）
+            # 不设置 WGPU_BACKEND，让它自动检测
+            
+            # 确保 EGL/OpenGL 可以被找到
+            export __EGL_VENDOR_LIBRARY_DIRS="${pkgs.mesa.drivers}/share/glvnd/egl_vendor.d"
+            
+            # 如果在 Wayland 下遇到问题，可以尝试强制使用 X11
+            # export WAYLAND_DISPLAY=""
+            # export GDK_BACKEND=x11
             
             # Rust 配置
             export RUST_BACKTRACE=1
@@ -121,6 +137,7 @@
             echo "🚀 Lapce development environment loaded!"
             echo "📦 Rust version: $(rustc --version)"
             echo "🔧 Cargo version: $(cargo --version)"
+            echo "🎨 Graphics: Auto-detecting backend (Vulkan/OpenGL)"
           '';
 
           # 防止 Cargo 使用 vendored 依赖时出现问题
