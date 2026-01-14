@@ -17,7 +17,6 @@ use floem::{
 };
 
 use super::{
-    debug_view::debug_panel,
     global_search_view::global_search_panel,
     kind::PanelKind,
     plugin_view::plugin_panel,
@@ -490,9 +489,6 @@ fn panel_view(
                 PanelKind::Problem => {
                     problem_panel(window_tab_data.clone(), position).into_any()
                 }
-                PanelKind::Debug => {
-                    debug_panel(window_tab_data.clone(), position).into_any()
-                }
                 PanelKind::CallHierarchy => {
                     show_hierarchy_panel(window_tab_data.clone(), position)
                         .into_any()
@@ -558,7 +554,6 @@ fn panel_picker(
                 PanelKind::Plugin => "Plugins",
                 PanelKind::Search => "Search",
                 PanelKind::Problem => "Problems",
-                PanelKind::Debug => "Debug",
                 PanelKind::CallHierarchy => "Call Hierarchy",
                 PanelKind::DocumentSymbol => "Document Symbol",
                 PanelKind::References => "References",

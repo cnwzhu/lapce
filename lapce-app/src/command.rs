@@ -482,9 +482,6 @@ pub enum LapceWorkbenchCommand {
     #[strum(serialize = "toggle_problem_visual")]
     ToggleProblemVisual,
 
-    #[strum(serialize = "toggle_debug_visual")]
-    ToggleDebugVisual,
-
     #[strum(serialize = "toggle_search_visual")]
     ToggleSearchVisual,
 

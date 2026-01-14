@@ -1144,13 +1144,10 @@ impl WindowTabData {
             // ==== Running / Debugging ====
             RunAndDebugRestart => {
                 let active_term = self.terminal.debug.active_term.get_untracked();
-                if let Some(is_debug) = active_term
+                if let Some(_is_debug) = active_term
                     .and_then(|term_id| self.terminal.restart_run_debug(term_id))
                 {
                     self.panel.show_panel(&PanelKind::Terminal);
-                    if is_debug {
-                        self.panel.show_panel(&PanelKind::Debug);
-                    }
                 } else {
                     self.palette.run(PaletteKind::RunAndDebug);
                 }
@@ -1281,9 +1278,6 @@ impl WindowTabData {
             }
             ToggleProblemVisual => {
                 self.toggle_panel_visual(PanelKind::Problem);
-            }
-            ToggleDebugVisual => {
-                self.toggle_panel_visual(PanelKind::Debug);
             }
             ToggleSearchVisual => {
                 self.toggle_panel_visual(PanelKind::Search);
@@ -2064,11 +2058,8 @@ impl WindowTabData {
                 self.terminal.stop_run_debug(term_id);
             }
             InternalCommand::RestartTerminal { term_id } => {
-                if let Some(is_debug) = self.terminal.restart_run_debug(term_id) {
+                if let Some(_is_debug) = self.terminal.restart_run_debug(term_id) {
                     self.panel.show_panel(&PanelKind::Terminal);
-                    if is_debug {
-                        self.panel.show_panel(&PanelKind::Debug);
-                    }
                 } else {
                     self.palette.run(PaletteKind::RunAndDebug);
                 }
@@ -2208,7 +2199,6 @@ impl WindowTabData {
                 stack_frames,
                 variables,
             } => {
-                self.show_panel(PanelKind::Debug);
                 self.terminal
                     .dap_stopped(dap_id, stopped, stack_frames, variables);
             }
@@ -2632,7 +2622,6 @@ impl WindowTabData {
             PanelKind::FileExplorer
             | PanelKind::Plugin
             | PanelKind::Problem
-            | PanelKind::Debug
             | PanelKind::CallHierarchy
             | PanelKind::DocumentSymbol
             | PanelKind::References
@@ -2751,9 +2740,6 @@ impl WindowTabData {
                         self.terminal.debug.source_breakpoints(),
                     )
                 };
-                if !self.panel.is_panel_visible(&PanelKind::Debug) {
-                    self.panel.show_panel(&PanelKind::Debug);
-                }
             }
         }
     }
