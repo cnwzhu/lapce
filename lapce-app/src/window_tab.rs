@@ -490,24 +490,7 @@ impl WindowTabData {
             common.clone(),
             main_split.clone(),
         );
-        if let Some(workspace_info) = workspace_info.as_ref() {
-            terminal.debug.breakpoints.set(
-                workspace_info
-                    .breakpoints
-                    .clone()
-                    .into_iter()
-                    .map(|(path, breakpoints)| {
-                        (
-                            path,
-                            breakpoints
-                                .into_iter()
-                                .map(|b| (b.line, b))
-                                .collect::<BTreeMap<usize, LapceBreakpoint>>(),
-                        )
-                    })
-                    .collect(),
-            );
-        }
+        // Breakpoints loading removed - DAP debugging removed
 
         let rename = RenameData::new(cx, main_split.editors, common.clone());
         let global_search = GlobalSearchData::new(cx, main_split.clone());
@@ -1083,24 +1066,7 @@ impl WindowTabData {
             }
 
             // ==== Remote ====
-            ConnectSshHost => {
-                self.palette.run(PaletteKind::SshHost);
-            }
-            #[cfg(windows)]
-            ConnectWslHost => {
-                self.palette.run(PaletteKind::WslHost);
-            }
-            DisconnectRemote => {
-                self.common.window_common.window_command.send(
-                    WindowCommand::SetWorkspace {
-                        workspace: LapceWorkspace {
-                            kind: LapceWorkspaceType::Local,
-                            path: None,
-                            last_open: 0,
-                        },
-                    },
-                );
-            }
+
 
             // ==== Palette Commands ====
             PaletteHelp => self.palette.run(PaletteKind::PaletteHelp),
@@ -2179,7 +2145,8 @@ impl WindowTabData {
                 self.terminal.launch_failed(term_id, error);
             }
             CoreNotification::RunInTerminal { config } => {
-                self.run_in_terminal(cx, &RunDebugMode::Debug, config, true);
+                // DAP Debug mode removed - use Run mode for terminal execution
+                self.run_in_terminal(cx, &RunDebugMode::Run, config, true);
             }
             CoreNotification::TerminalProcessId {
                 term_id,
@@ -2217,7 +2184,8 @@ impl WindowTabData {
                             }
                             if let Some(breakpoint) = breakpoints.get(i) {
                                 current_breakpoint.id = breakpoint.id;
-                                current_breakpoint.verified = breakpoint.verified;
+                                current_breakpoint.verified =
+                                    Some(breakpoint.verified);
                                 current_breakpoint
                                     .message
                                     .clone_from(&breakpoint.message);
@@ -2367,16 +2335,7 @@ impl WindowTabData {
         WorkspaceInfo {
             split: main_split_data.get_untracked().split_info(self),
             panel: self.panel.panel_info(),
-            breakpoints: self
-                .terminal
-                .debug
-                .breakpoints
-                .get_untracked()
-                .into_iter()
-                .map(|(path, breakpoints)| {
-                    (path, breakpoints.into_values().collect::<Vec<_>>())
-                })
-                .collect(),
+            // breakpoints field removed - DAP debugging removed
         }
     }
 
@@ -2718,21 +2677,8 @@ impl WindowTabData {
         config: &RunDebugConfig,
     ) {
         debug!("{:?}", config);
-        match mode {
-            RunDebugMode::Run => {
-                self.run_in_terminal(cx, mode, config, false);
-            }
-            RunDebugMode::Debug => {
-                if config.prelaunch.is_some() {
-                    self.run_in_terminal(cx, mode, config, false);
-                } else {
-                    self.common.proxy.dap_start(
-                        config.clone(),
-                        self.terminal.debug.source_breakpoints(),
-                    )
-                };
-            }
-        }
+        // DAP Debug mode removed - only Run mode terminal execution
+        self.run_in_terminal(cx, mode, config, false);
     }
 
     fn run_in_terminal(

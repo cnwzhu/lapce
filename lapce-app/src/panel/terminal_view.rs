@@ -96,16 +96,14 @@ fn terminal_tab_header(window_tab_data: Rc<WindowTabData>) -> impl View {
                     let terminal = tab.active_terminal(true);
                     let run_debug = terminal.as_ref().map(|t| t.run_debug);
                     if let Some(run_debug) = run_debug {
-                        if let Some((mode, stopped)) = run_debug.with(|run_debug| {
+                        if let Some((_mode, stopped)) = run_debug.with(|run_debug| {
                             run_debug.as_ref().map(|r| (r.mode, r.stopped))
                         }) {
-                            let svg = match (mode, stopped) {
-                                (RunDebugMode::Run, false) => LapceIcons::START,
-                                (RunDebugMode::Run, true) => LapceIcons::RUN_ERRORS,
-                                (RunDebugMode::Debug, false) => LapceIcons::DEBUG,
-                                (RunDebugMode::Debug, true) => {
-                                    LapceIcons::DEBUG_DISCONNECT
-                                }
+                            // DAP Debug mode removed - only Run mode icons
+                            let svg = if stopped {
+                                LapceIcons::RUN_ERRORS
+                            } else {
+                                LapceIcons::START
                             };
                             return svg;
                         }

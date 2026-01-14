@@ -11,7 +11,11 @@ use crate::{tracing::*, update::ReleaseInfo};
 
 fn get_github_api(url: &str) -> Result<String> {
     let user_agent = format!("Lapce/{}", lapce_core::meta::VERSION);
-    let resp = lapce_proxy::get_url(url, Some(user_agent.as_str()))?;
+    let client = reqwest::blocking::Client::builder()
+        .user_agent(user_agent)
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
+    let resp = client.get(url).send()?;
     if !resp.status().is_success() {
         return Err(anyhow!("get release info failed {}", resp.text()?));
     }
@@ -110,7 +114,10 @@ fn download_release(
 
     for asset in &release.assets {
         if asset.name.starts_with(file_name) {
-            let mut resp = lapce_proxy::get_url(&asset.browser_download_url, None)?;
+            let client = reqwest::blocking::Client::builder()
+                .timeout(std::time::Duration::from_secs(300)) // Longer timeout for downloads
+                .build()?;
+            let mut resp = client.get(&asset.browser_download_url).send()?;
             if !resp.status().is_success() {
                 return Err(anyhow!("download file error {}", resp.text()?));
             }

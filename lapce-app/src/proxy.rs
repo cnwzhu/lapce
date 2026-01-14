@@ -15,16 +15,10 @@ use lapce_rpc::{
 };
 use tracing::error;
 
-use self::{remote::start_remote, ssh::SshRemote};
 use crate::{
     terminal::event::TermEvent,
     workspace::{LapceWorkspace, LapceWorkspaceType},
 };
-
-mod remote;
-mod ssh;
-#[cfg(windows)]
-mod wsl;
 
 pub struct Proxy {
     pub tx: Sender<CoreNotification>,
@@ -80,29 +74,6 @@ pub fn new_proxy(
                         let mut dispatcher = Dispatcher::new(core_rpc, proxy_rpc);
                         let proxy_rpc = dispatcher.proxy_rpc.clone();
                         proxy_rpc.mainloop(&mut dispatcher);
-                    }
-                    LapceWorkspaceType::RemoteSSH(remote) => {
-                        if let Err(e) = start_remote(
-                            SshRemote {
-                                ssh: remote.clone(),
-                            },
-                            core_rpc.clone(),
-                            proxy_rpc.clone(),
-                        ) {
-                            error!("Failed to start SSH remote: {e}");
-                        }
-                    }
-                    #[cfg(windows)]
-                    LapceWorkspaceType::RemoteWSL(remote) => {
-                        if let Err(e) = start_remote(
-                            wsl::WslRemote {
-                                wsl: remote.clone(),
-                            },
-                            core_rpc.clone(),
-                            proxy_rpc.clone(),
-                        ) {
-                            error!("Failed to start SSH remote: {e}");
-                        }
                     }
                 }
                 core_rpc.notification(CoreNotification::ProxyStatus {

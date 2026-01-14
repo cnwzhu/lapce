@@ -30,7 +30,11 @@ pub fn get_latest_release() -> Result<ReleaseInfo> {
         _ => "https://api.github.com/repos/lapce/lapce/releases/latest",
     };
 
-    let resp = lapce_proxy::get_url(url, Some("Lapce"))?;
+    let client = reqwest::blocking::Client::builder()
+        .user_agent("Lapce")
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
+    let resp = client.get(url).send()?;
     if !resp.status().is_success() {
         return Err(anyhow!("get release info failed {}", resp.text()?));
     }
@@ -72,7 +76,10 @@ pub fn download_release(release: &ReleaseInfo) -> Result<PathBuf> {
 
     for asset in &release.assets {
         if asset.name == name {
-            let mut resp = lapce_proxy::get_url(&asset.browser_download_url, None)?;
+            let client = reqwest::blocking::Client::builder()
+                .timeout(std::time::Duration::from_secs(300)) // Longer timeout
+                .build()?;
+            let mut resp = client.get(&asset.browser_download_url).send()?;
             if !resp.status().is_success() {
                 return Err(anyhow!("download file error {}", resp.text()?));
             }

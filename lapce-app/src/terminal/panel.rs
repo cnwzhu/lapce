@@ -392,10 +392,7 @@ impl TerminalPanelData {
                                 && run_debug.config.prelaunch.is_some()
                             {
                                 run_debug.is_prelaunch = false;
-                                if run_debug.mode == RunDebugMode::Debug {
-                                    // set it to be stopped so that the dap can pick the same terminal session
-                                    run_debug.stopped = true;
-                                }
+                                // DAP debugging removed - no special handling needed
                                 Some(true)
                             } else {
                                 run_debug.stopped = true;
@@ -410,14 +407,8 @@ impl TerminalPanelData {
                 if was_prelaunch == Some(true) && exit_code == 0 {
                     let run_debug = terminal.run_debug.get_untracked();
                     if let Some(run_debug) = run_debug {
-                        if run_debug.mode == RunDebugMode::Debug {
-                            self.common.proxy.dap_start(
-                                run_debug.config,
-                                self.debug.source_breakpoints(),
-                            )
-                        } else {
-                            terminal.new_process(Some(run_debug));
-                        }
+                        // DAP debugging removed - just restart process for Run mode
+                        terminal.new_process(Some(run_debug));
                     }
                 }
             } else {
@@ -439,17 +430,9 @@ impl TerminalPanelData {
                             terminal.run_debug.get_untracked().as_ref()
                         {
                             if run_debug.stopped && &run_debug.mode == mode {
-                                match run_debug.mode {
-                                    RunDebugMode::Run => {
-                                        if run_debug.config.name == config.name {
-                                            return Some(terminal.clone());
-                                        }
-                                    }
-                                    RunDebugMode::Debug => {
-                                        if run_debug.config.dap_id == config.dap_id {
-                                            return Some(terminal.clone());
-                                        }
-                                    }
+                                // DAP Debug mode removed - only Run mode
+                                if run_debug.config.name == config.name {
+                                    return Some(terminal.clone());
                                 }
                             }
                         }
@@ -464,7 +447,7 @@ impl TerminalPanelData {
         })
     }
 
-    /// Return whether it is in debug mode.
+    /// Restart a run process. Returns false since debug mode is removed.
     pub fn restart_run_debug(&self, term_id: TermId) -> Option<bool> {
         let (_, terminal_tab, index, terminal) =
             self.get_terminal_in_tab(&term_id)?;
@@ -476,44 +459,27 @@ impl TerminalPanelData {
                 run_debug.config = new_config;
             }
         }
-        let mut is_debug = false;
-        let new_term_id = match run_debug.mode {
-            RunDebugMode::Run => {
-                self.common.proxy.terminal_close(term_id);
-                let mut run_debug = run_debug;
-                run_debug.stopped = false;
-                run_debug.is_prelaunch = true;
-                let new_terminal = TerminalData::new_run_debug(
-                    terminal_tab.scope,
-                    self.workspace.clone(),
-                    Some(run_debug),
-                    None,
-                    self.common.clone(),
-                );
-                let new_term_id = new_terminal.term_id;
-                terminal_tab.terminals.update(|terminals| {
-                    terminals[index] =
-                        (new_terminal.scope.create_rw_signal(0), new_terminal);
-                });
-                self.debug.active_term.set(Some(new_term_id));
-                new_term_id
-            }
-            RunDebugMode::Debug => {
-                is_debug = true;
-                let dap_id =
-                    terminal.run_debug.get_untracked().as_ref()?.config.dap_id;
-                let daps = self.debug.daps.get_untracked();
-                let dap = daps.get(&dap_id)?;
-                self.common
-                    .proxy
-                    .dap_restart(dap.dap_id, self.debug.source_breakpoints());
-                term_id
-            }
-        };
+        // DAP Debug mode removed - only Run mode restart
+        self.common.proxy.terminal_close(term_id);
+        run_debug.stopped = false;
+        run_debug.is_prelaunch = true;
+        let new_terminal = TerminalData::new_run_debug(
+            terminal_tab.scope,
+            self.workspace.clone(),
+            Some(run_debug),
+            None,
+            self.common.clone(),
+        );
+        let new_term_id = new_terminal.term_id;
+        terminal_tab.terminals.update(|terminals| {
+            terminals[index] =
+                (new_terminal.scope.create_rw_signal(0), new_terminal);
+        });
+        self.debug.active_term.set(Some(new_term_id));
 
         self.focus_terminal(new_term_id);
 
-        Some(is_debug)
+        Some(false) // Never debug mode anymore
     }
 
     fn get_run_config_by_name(&self, name: &str) -> Option<RunDebugConfig> {
@@ -574,19 +540,10 @@ impl TerminalPanelData {
 
     pub fn stop_run_debug(&self, term_id: TermId) -> Option<()> {
         let terminal = self.get_terminal(&term_id)?;
-        let run_debug = terminal.run_debug.get_untracked()?;
+        let _run_debug = terminal.run_debug.get_untracked()?;
 
-        match run_debug.mode {
-            RunDebugMode::Run => {
-                self.common.proxy.terminal_close(term_id);
-            }
-            RunDebugMode::Debug => {
-                let dap_id = run_debug.config.dap_id;
-                let daps = self.debug.daps.get_untracked();
-                let dap = daps.get(&dap_id)?;
-                self.common.proxy.dap_stop(dap.dap_id);
-            }
-        }
+        // DAP Debug mode removed - only terminal close for Run mode
+        self.common.proxy.terminal_close(term_id);
 
         self.focus_terminal(term_id);
         Some(())

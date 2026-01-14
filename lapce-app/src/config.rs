@@ -8,7 +8,7 @@ use ::core::slice;
 use floem::{peniko::Color, prelude::palette::css};
 use itertools::Itertools;
 use lapce_core::directory::Directory;
-use lapce_proxy::plugin::wasi::find_all_volts;
+use lapce_proxy::plugin::loader::find_all_volts;
 use lapce_rpc::plugin::VoltID;
 use lsp_types::{CompletionItemKind, SymbolKind};
 use once_cell::sync::Lazy;
@@ -224,9 +224,6 @@ impl LapceConfig {
                         .unwrap_or_else(|_| config.clone());
                 }
             }
-            LapceWorkspaceType::RemoteSSH(_) => {}
-            #[cfg(windows)]
-            LapceWorkspaceType::RemoteWSL(_) => {}
         }
 
         config

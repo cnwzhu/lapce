@@ -3,11 +3,13 @@ pub mod alert;
 pub mod app;
 pub mod code_action;
 pub mod code_lens;
+
 pub mod command;
 pub mod completion;
 pub mod config;
 pub mod db;
 pub mod debug;
+
 pub mod doc;
 pub mod dropdown_menu;
 pub mod editor;

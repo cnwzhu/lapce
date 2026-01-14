@@ -24,7 +24,7 @@ use floem::{
 };
 use indexmap::IndexMap;
 use lapce_core::{command::EditCommand, directory::Directory, mode::Mode};
-use lapce_proxy::plugin::{download_volt, volt_icon, wasi::find_all_volts};
+use lapce_proxy::plugin::{loader::find_all_volts, volt_icon};
 use lapce_rpc::{
     core::{CoreNotification, CoreRpcHandler},
     plugin::{VoltID, VoltInfo, VoltMetadata},
@@ -286,7 +286,7 @@ impl PluginData {
 
         let latest = volt_data.latest;
         if !is_latest {
-            let url = format!(
+            let _url = format!(
                 "https://plugins.lapce.dev/api/v1/plugins/{}/{}/latest",
                 volt.author, volt.name
             );
@@ -295,11 +295,9 @@ impl PluginData {
                     latest.set(info);
                 }
             });
+            // Network check for latest version disabled
             std::thread::spawn(move || {
-                let info: Option<VoltInfo> = lapce_proxy::get_url(url, None)
-                    .ok()
-                    .and_then(|r| r.json().ok());
-                send(info);
+                send(None);
             });
         }
     }
@@ -431,18 +429,10 @@ impl PluginData {
         let content = match cache_content {
             Some(content) => content,
             None => {
-                let resp = lapce_proxy::get_url(&url, None)?;
-                if !resp.status().is_success() {
-                    return Err(anyhow::anyhow!("can't download icon"));
+                let buf = Vec::new();
+                if let Some(_path) = cache_file_path.as_ref() {
+                    // Cache write skipped
                 }
-                let buf = resp.bytes()?.to_vec();
-
-                if let Some(path) = cache_file_path.as_ref() {
-                    if let Err(err) = std::fs::write(path, &buf) {
-                        tracing::error!("{:?}", err);
-                    }
-                }
-
                 buf
             }
         };
@@ -454,26 +444,25 @@ impl PluginData {
         volt: &VoltInfo,
         config: &LapceConfig,
     ) -> Result<Vec<MarkdownContent>> {
-        let url = format!(
+        let _url = format!(
             "https://plugins.lapce.dev/api/v1/plugins/{}/{}/{}/readme",
             volt.author, volt.name, volt.version
         );
-        let resp = lapce_proxy::get_url(&url, None)?;
-        if resp.status() != 200 {
-            let text = parse_markdown("Plugin doesn't have a README", 2.0, config);
-            return Ok(text);
-        }
-        let text = resp.text()?;
-        let text = parse_markdown(&text, 2.0, config);
+        // Network readme download disabled
+        let text = parse_markdown(
+            "Plugin readme not available (Network disabled)",
+            2.0,
+            config,
+        );
         Ok(text)
     }
 
-    fn query_volts(query: &str, offset: usize) -> Result<VoltsInfo> {
-        let url = format!(
-            "https://plugins.lapce.dev/api/v1/plugins?q={query}&offset={offset}"
-        );
-        let plugins: VoltsInfo = lapce_proxy::get_url(url, None)?.json()?;
-        Ok(plugins)
+    fn query_volts(_query: &str, _offset: usize) -> Result<VoltsInfo> {
+        // Network query disabled
+        Ok(VoltsInfo {
+            plugins: Vec::new(),
+            total: 0,
+        })
     }
 
     fn all_loaded(&self) -> bool {
@@ -512,11 +501,9 @@ impl PluginData {
                 }
             });
             std::thread::spawn(move || {
+                // download_volt disabled
                 let download = || -> Result<(VoltMetadata, Option<Vec<u8>>)> {
-                    let download_volt_result = download_volt(&info);
-                    let meta = download_volt_result?;
-                    let icon = volt_icon(&meta);
-                    Ok((meta, icon))
+                    Err(anyhow::anyhow!("Network installation disabled"))
                 };
                 send(download());
             });

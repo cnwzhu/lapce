@@ -1415,11 +1415,12 @@ fn editor_gutter_breakpoint_view(
                     {
                         e.insert(LapceBreakpoint {
                             id: None,
-                            verified: false,
+                            verified: Some(false),
                             message: None,
                             line,
                             offset,
                             dap_line: None,
+                            dap_verified: None,
                             active: true,
                         });
                     } else {
