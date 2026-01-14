@@ -7,6 +7,7 @@ use floem::{
     },
 };
 use serde::{Deserialize, Serialize};
+use strum::IntoEnumIterator;
 
 use super::{
     kind::PanelKind,
@@ -24,7 +25,11 @@ pub fn default_panel_order() -> PanelOrder {
     let mut order = PanelOrder::new();
     order.insert(
         PanelPosition::LeftTop,
-        im::vector![PanelKind::FileExplorer, PanelKind::SourceControl,],
+        im::vector![
+            PanelKind::FileExplorer,
+            PanelKind::SourceControl,
+            PanelKind::Database,
+        ],
     );
     order.insert(
         PanelPosition::BottomLeft,
@@ -34,7 +39,7 @@ pub fn default_panel_order() -> PanelOrder {
             PanelKind::Problem,
             PanelKind::CallHierarchy,
             PanelKind::References,
-            PanelKind::Implementation
+            PanelKind::Implementation,
         ],
     );
     order.insert(
@@ -52,6 +57,7 @@ pub enum PanelSection {
     Error,
     Warn,
     Changes,
+    Database,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -85,11 +91,26 @@ pub struct PanelData {
 impl PanelData {
     pub fn new(
         cx: Scope,
-        panels: im::HashMap<PanelPosition, im::Vector<PanelKind>>,
+        mut panels: im::HashMap<PanelPosition, im::Vector<PanelKind>>,
         available_size: Memo<Size>,
         sections: im::HashMap<PanelSection, bool>,
         common: Rc<CommonData>,
     ) -> Self {
+        let mut present_panels = std::collections::HashSet::new();
+        for (_, p) in panels.iter() {
+            for kind in p {
+                present_panels.insert(*kind);
+            }
+        }
+
+        for kind in PanelKind::iter() {
+            if !present_panels.contains(&kind) {
+                let position = kind.default_position();
+                let p = panels.entry(position).or_insert_with(im::Vector::new);
+                p.push_back(kind);
+            }
+        }
+
         let panels = cx.create_rw_signal(panels);
 
         let mut styles = im::HashMap::new();

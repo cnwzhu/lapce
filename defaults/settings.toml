@@ -88,7 +88,7 @@ default = {}
 [ui]
 scale = +1.0
 font-family = ""
-font-size = 13
+font-size = 12
 icon-size = 0
 header-height = 36
 status-height = 25

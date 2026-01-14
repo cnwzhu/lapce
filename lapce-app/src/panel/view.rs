@@ -17,6 +17,7 @@ use floem::{
 };
 
 use super::{
+    database_view::database_panel,
     global_search_view::global_search_panel,
     kind::PanelKind,
     position::{PanelContainerPosition, PanelPosition},
@@ -499,6 +500,9 @@ fn panel_view(
                     implementation_panel(window_tab_data.clone(), position)
                         .into_any()
                 }
+                PanelKind::Database => {
+                    database_panel(window_tab_data.clone(), position).into_any()
+                }
             };
             view.style(|s| s.size_pct(100.0, 100.0))
         },
@@ -553,6 +557,7 @@ fn panel_picker(
                 PanelKind::DocumentSymbol => "Document Symbol",
                 PanelKind::References => "References",
                 PanelKind::Implementation => "Implementation",
+                PanelKind::Database => "Database",
             };
             let icon = p.svg_name();
             let is_active = {

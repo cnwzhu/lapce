@@ -2615,7 +2615,8 @@ impl WindowTabData {
             | PanelKind::CallHierarchy
             | PanelKind::DocumentSymbol
             | PanelKind::References
-            | PanelKind::Implementation => {
+            | PanelKind::Implementation
+            | PanelKind::Database => {
                 // Some panels don't accept focus (yet). Fall back to visibility check
                 // in those cases.
                 self.panel.is_panel_visible(&kind)

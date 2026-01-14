@@ -1,5 +1,6 @@
 pub mod call_hierarchy_view;
 pub mod data;
+pub mod database_view;
 pub mod document_symbol;
 pub mod global_search_view;
 pub mod implementation_view;

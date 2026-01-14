@@ -17,6 +17,7 @@ pub enum PanelKind {
     DocumentSymbol,
     References,
     Implementation,
+    Database,
 }
 
 impl PanelKind {
@@ -31,6 +32,7 @@ impl PanelKind {
             PanelKind::DocumentSymbol => LapceIcons::DOCUMENT_SYMBOL,
             PanelKind::References => LapceIcons::REFERENCES,
             PanelKind::Implementation => LapceIcons::IMPLEMENTATION,
+            PanelKind::Database => LapceIcons::DATABASE,
         }
     }
 
@@ -55,6 +57,7 @@ impl PanelKind {
             PanelKind::DocumentSymbol => PanelPosition::RightTop,
             PanelKind::References => PanelPosition::BottomLeft,
             PanelKind::Implementation => PanelPosition::BottomLeft,
+            PanelKind::Database => PanelPosition::LeftTop,
         }
     }
 }

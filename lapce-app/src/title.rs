@@ -26,6 +26,27 @@ use crate::{
     workspace::LapceWorkspace,
 };
 
+fn menu_item<S: std::fmt::Display + 'static>(
+    label_text: impl Fn() -> S + 'static,
+    menu_fn: impl Fn() -> Menu + 'static,
+    config: ReadSignal<Arc<LapceConfig>>,
+) -> impl View {
+    label(label_text)
+        .style(move |s| {
+            let config = config.get();
+            s.padding_horiz(10.0)
+                .items_center()
+                .height(26.0)
+                .margin_horiz(4.0)
+                .border_radius(6.0)
+                .cursor(CursorStyle::Pointer)
+                .hover(|s| {
+                    s.background(config.color(LapceColor::PANEL_HOVERED_BACKGROUND))
+                })
+        })
+        .popout_menu(menu_fn)
+}
+
 fn left(
     workspace: Arc<LapceWorkspace>,
     lapce_command: Listener<LapceCommand>,
@@ -55,64 +76,26 @@ fn left(
         ))
         .style(move |s| s.margin_horiz(10.0).apply_if(is_macos, |s| s.hide())),
         stack((
-            label(|| "File".to_string())
-                .style(move |s| {
-                    let config = config.get();
-                    s.padding_horiz(10.0)
-                        .items_center()
-                        .height_pct(100.0)
-                        .cursor(CursorStyle::Pointer)
-                        .hover(|s| {
-                            s.background(
-                                config.color(LapceColor::PANEL_HOVERED_BACKGROUND),
-                            )
-                        })
-                })
-                .popout_menu(move || {
-                    file_menu_native(lapce_command, workbench_command)
-                }),
-            label(|| "Edit".to_string())
-                .style(move |s| {
-                    let config = config.get();
-                    s.padding_horiz(10.0)
-                        .items_center()
-                        .height_pct(100.0)
-                        .cursor(CursorStyle::Pointer)
-                        .hover(|s| {
-                            s.background(
-                                config.color(LapceColor::PANEL_HOVERED_BACKGROUND),
-                            )
-                        })
-                })
-                .popout_menu(move || edit_menu_native(lapce_command)),
-            label(|| "Run".to_string())
-                .style(move |s| {
-                    let config = config.get();
-                    s.padding_horiz(10.0)
-                        .items_center()
-                        .height_pct(100.0)
-                        .cursor(CursorStyle::Pointer)
-                        .hover(|s| {
-                            s.background(
-                                config.color(LapceColor::PANEL_HOVERED_BACKGROUND),
-                            )
-                        })
-                })
-                .popout_menu(move || run_menu_native(workbench_command)),
-            label(|| "Help".to_string())
-                .style(move |s| {
-                    let config = config.get();
-                    s.padding_horiz(10.0)
-                        .items_center()
-                        .height_pct(100.0)
-                        .cursor(CursorStyle::Pointer)
-                        .hover(|s| {
-                            s.background(
-                                config.color(LapceColor::PANEL_HOVERED_BACKGROUND),
-                            )
-                        })
-                })
-                .popout_menu(move || help_menu_native(workbench_command)),
+            menu_item(
+                move || "File".to_string(),
+                move || file_menu_native(lapce_command, workbench_command),
+                config,
+            ),
+            menu_item(
+                move || "Edit".to_string(),
+                move || edit_menu_native(lapce_command),
+                config,
+            ),
+            menu_item(
+                move || "Run".to_string(),
+                move || run_menu_native(workbench_command),
+                config,
+            ),
+            menu_item(
+                move || "Help".to_string(),
+                move || help_menu_native(workbench_command),
+                config,
+            ),
         ))
         .style(move |s| {
             s.height_pct(100.0)

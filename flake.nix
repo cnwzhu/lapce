@@ -102,6 +102,9 @@
           xorg.libXcursor
           xorg.libXi
           xorg.libXrandr
+          libgit2
+          openssl
+          zlib
         ] ++ lib.optionals stdenv.isLinux [
           stdenv.cc.cc.lib
         ]);
