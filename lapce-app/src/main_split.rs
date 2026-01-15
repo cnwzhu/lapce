@@ -47,7 +47,7 @@ use crate::{
         EditorTabChild, EditorTabChildSource, EditorTabData, EditorTabInfo,
     },
     id::{
-        DiffEditorId, EditorTabId, KeymapId, SettingsId, SplitId,
+        DatabaseViewId, DiffEditorId, EditorTabId, KeymapId, SettingsId, SplitId,
         ThemeColorSettingsId, VoltViewId,
     },
     keypress::{EventRef, KeyPressData, KeyPressHandle},
@@ -538,6 +538,7 @@ impl MainSplitData {
             EditorTabChild::ThemeColorSettings(_) => None,
             EditorTabChild::Keymap(_) => None,
             EditorTabChild::Volt(_, _) => None,
+            EditorTabChild::Database(_) => None,
         }
     }
 
@@ -870,7 +871,9 @@ impl MainSplitData {
                         EditorTabChild::Settings(_) => true,
                         EditorTabChild::ThemeColorSettings(_) => true,
                         EditorTabChild::Keymap(_) => true,
+
                         EditorTabChild::Volt(_, _) => true,
+                        EditorTabChild::Database(_) => true,
                     };
 
                     if can_be_selected {
@@ -1036,6 +1039,28 @@ impl MainSplitData {
                         })
                     }
                 }
+                EditorTabChildSource::Database => {
+                    if let Some(index) =
+                        active_editor_tab.with_untracked(|editor_tab| {
+                            editor_tab.children.iter().position(|(_, _, child)| {
+                                matches!(child, EditorTabChild::Database(_))
+                            })
+                        })
+                    {
+                        Some(index)
+                    } else if ignore_unconfirmed {
+                        None
+                    } else {
+                        active_editor_tab.with_untracked(|editor_tab| {
+                            editor_tab
+                                .get_unconfirmed_editor_tab_child(
+                                    editors,
+                                    &diff_editors,
+                                )
+                                .map(|(i, _)| i)
+                        })
+                    }
+                }
             }
         };
 
@@ -1109,6 +1134,9 @@ impl MainSplitData {
                     });
                     EditorTabChild::DiffEditor(diff_editor_id)
                 }
+                EditorTabChildSource::Database => {
+                    EditorTabChild::Database(DatabaseViewId::next())
+                }
             };
 
         if let Some(selected) = selected {
@@ -1129,6 +1157,7 @@ impl MainSplitData {
                         EditorTabChild::ThemeColorSettings(_) => {}
                         EditorTabChild::Keymap(_) => {}
                         EditorTabChild::Volt(_, _) => {}
+                        EditorTabChild::Database(_) => {}
                     }
                     (editor_tab_id, current_child.clone())
                 });
@@ -1169,6 +1198,18 @@ impl MainSplitData {
                 (EditorTabChild::Settings(_), EditorTabChildSource::Settings) => {
                     true
                 }
+                (
+                    EditorTabChild::ThemeColorSettings(_),
+                    EditorTabChildSource::ThemeColorSettings,
+                ) => true,
+                (EditorTabChild::Keymap(_), EditorTabChildSource::Keymap) => true,
+                (
+                    EditorTabChild::Volt(_, current_id),
+                    EditorTabChildSource::Volt(id),
+                ) => current_id == id,
+                (EditorTabChild::Database(_), EditorTabChildSource::Database) => {
+                    true
+                }
                 _ => false,
             };
             if is_same {
@@ -1195,6 +1236,7 @@ impl MainSplitData {
                 EditorTabChild::ThemeColorSettings(_) => {}
                 EditorTabChild::Keymap(_) => {}
                 EditorTabChild::Volt(_, _) => {}
+                EditorTabChild::Database(_) => {}
             }
 
             // Now loading the new child
@@ -1269,6 +1311,12 @@ impl MainSplitData {
                                     } else {
                                         false
                                     }
+                                }),
+                            EditorTabChildSource::Database => editor_tab
+                                .children
+                                .iter()
+                                .position(|(_, _, child)| {
+                                    matches!(child, EditorTabChild::Database(_))
                                 }),
                             EditorTabChildSource::NewFileEditor => None,
                         })
@@ -1573,6 +1621,9 @@ impl MainSplitData {
             EditorTabChild::Keymap(_) => EditorTabChild::Keymap(KeymapId::next()),
             EditorTabChild::Volt(_, id) => {
                 EditorTabChild::Volt(VoltViewId::next(), id.to_owned())
+            }
+            EditorTabChild::Database(_) => {
+                EditorTabChild::Database(DatabaseViewId::next())
             }
         };
 
@@ -1916,6 +1967,7 @@ impl MainSplitData {
             EditorTabChild::ThemeColorSettings(_) => None,
             EditorTabChild::Keymap(_) => None,
             EditorTabChild::Volt(_, _) => None,
+            EditorTabChild::Database(_) => None,
         }
     }
 
@@ -2058,6 +2110,7 @@ impl MainSplitData {
                         Some(AlertButton {
                             text: "Save".to_string(),
                             action: save_action,
+                            is_primary: true,
                         })
                     }
                     DocContent::File { .. } => {
@@ -2081,6 +2134,7 @@ impl MainSplitData {
                         Some(AlertButton {
                             text: "Save".to_string(),
                             action: save_action,
+                            is_primary: true,
                         })
                     }
                     DocContent::Local => None,
@@ -2110,6 +2164,7 @@ impl MainSplitData {
                                             true,
                                         );
                                     }),
+                                    is_primary: false,
                                 },
                             ],
                         });
@@ -2154,6 +2209,7 @@ impl MainSplitData {
             EditorTabChild::ThemeColorSettings(_) => {}
             EditorTabChild::Keymap(_) => {}
             EditorTabChild::Volt(_, _) => {}
+            EditorTabChild::Database(_) => {}
         }
 
         if editor_tab_children_len == 0 {
@@ -2427,6 +2483,10 @@ impl MainSplitData {
 
     pub fn open_keymap(&self) {
         self.get_editor_tab_child(EditorTabChildSource::Keymap, false, false);
+    }
+
+    pub fn open_database(&self) {
+        self.get_editor_tab_child(EditorTabChildSource::Database, false, false);
     }
 
     pub fn new_file(&self) -> EditorTabChild {
@@ -2747,6 +2807,7 @@ impl MainSplitData {
             EditorTabChild::ThemeColorSettings(_) => {}
             EditorTabChild::Keymap(_) => {}
             EditorTabChild::Volt(_, _) => {}
+            EditorTabChild::Database(_) => {}
         }
         Some(())
     }

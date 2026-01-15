@@ -21,6 +21,7 @@ use crate::{
 pub struct AlertButton {
     pub text: String,
     pub action: Rc<dyn Fn()>,
+    pub is_primary: bool,
 }
 
 impl fmt::Debug for AlertButton {
@@ -73,74 +74,109 @@ pub fn alert_box(alert_data: AlertBoxData) -> impl View {
                     s.margin_top(20.0)
                         .width_pct(100.0)
                         .font_bold()
-                        .font_size((config.get().ui.font_size() + 1) as f32)
+                        .font_size((config.get().ui.font_size() + 2) as f32)
                 }),
                 label(move || msg.get())
                     .style(move |s| s.width_pct(100.0).margin_top(10.0)),
-                dyn_stack(
-                    move || buttons.get(),
-                    move |_button| {
-                        button_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+                stack((
+                    {
+                        let config = config.clone();
+                        dyn_stack(
+                            move || buttons.get(),
+                            move |_button| {
+                                button_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+                            },
+                            move |button| {
+                                let config = config.clone();
+                                let is_primary = button.is_primary;
+                                label(move || button.text.clone())
+                                    .on_click_stop(move |_| {
+                                        (button.action)();
+                                    })
+                                    .style(move |s| {
+                                        let config = config.get();
+                                        s.padding_horiz(16.0)
+                                            .padding_vert(6.0)
+                                            .margin_right(10.0)
+                                            .justify_center()
+                                            .font_size((config.ui.font_size()) as f32)
+                                            .border(1.0)
+                                            .border_radius(6.0)
+                                            .apply_if(is_primary, |s| {
+                                                s.border_color(config.color(
+                                                    LapceColor::LAPCE_BUTTON_PRIMARY_BACKGROUND,
+                                                ))
+                                                .background(config.color(
+                                                    LapceColor::LAPCE_BUTTON_PRIMARY_BACKGROUND,
+                                                ))
+                                                .color(config.color(
+                                                    LapceColor::LAPCE_BUTTON_PRIMARY_FOREGROUND,
+                                                ))
+                                            })
+                                            .apply_if(!is_primary, |s| {
+                                                s.border_color(config.color(LapceColor::LAPCE_BORDER))
+                                            })
+                                            .hover({
+                                                let config = config.clone();
+                                                move |s| {
+                                                s.cursor(CursorStyle::Pointer).apply_if(
+                                                    !is_primary,
+                                                    |s| {
+                                                        s.background(config.color(
+                                                            LapceColor::PANEL_HOVERED_BACKGROUND,
+                                                        ))
+                                                    },
+                                                )
+                                            }})
+                                            .active({
+                                                let config = config.clone();
+                                                move |s| {
+                                                s.apply_if(!is_primary, |s| {
+                                                    s.background(config.color(
+                                                        LapceColor::PANEL_HOVERED_ACTIVE_BACKGROUND,
+                                                    ))
+                                                })
+                                            }})
+                                    })
+                            },
+                        )
                     },
-                    move |button| {
-                        label(move || button.text.clone())
+                    {
+                        let config = config.clone();
+                        label(|| "Cancel".to_string())
                             .on_click_stop(move |_| {
-                                (button.action)();
+                                active.set(false);
                             })
                             .style(move |s| {
                                 let config = config.get();
-                                s.margin_top(10.0)
-                                    .width_pct(100.0)
+                                s.padding_horiz(16.0)
+                                    .padding_vert(6.0)
                                     .justify_center()
-                                    .font_size((config.ui.font_size() + 1) as f32)
-                                    .line_height(1.6)
+                                    .font_size((config.ui.font_size()) as f32)
                                     .border(1.0)
                                     .border_radius(6.0)
-                                    .border_color(
-                                        config.color(LapceColor::LAPCE_BORDER),
-                                    )
-                                    .hover(|s| {
+                                    .border_color(config.color(LapceColor::LAPCE_BORDER))
+                                    .hover({
+                                        let config = config.clone();
+                                        move |s| {
                                         s.cursor(CursorStyle::Pointer).background(
-                                            config.color(
-                                                LapceColor::PANEL_HOVERED_BACKGROUND,
-                                            ),
+                                            config
+                                                .color(LapceColor::PANEL_HOVERED_BACKGROUND),
                                         )
-                                    })
-                                    .active(|s| {
+                                    }})
+                                    .active({
+                                        let config = config.clone();
+                                        move |s| {
                                         s.background(config.color(
-                                    LapceColor::PANEL_HOVERED_ACTIVE_BACKGROUND,
-                                ))
-                                    })
+                                            LapceColor::PANEL_HOVERED_ACTIVE_BACKGROUND,
+                                        ))
+                                    }})
                             })
                     },
-                )
-                .style(|s| s.flex_col().width_pct(100.0).margin_top(10.0)),
-                label(|| "Cancel".to_string())
-                    .on_click_stop(move |_| {
-                        active.set(false);
-                    })
-                    .style(move |s| {
-                        let config = config.get();
-                        s.margin_top(20.0)
-                            .width_pct(100.0)
-                            .justify_center()
-                            .font_size((config.ui.font_size() + 1) as f32)
-                            .line_height(1.5)
-                            .border(1.0)
-                            .border_radius(6.0)
-                            .border_color(config.color(LapceColor::LAPCE_BORDER))
-                            .hover(|s| {
-                                s.cursor(CursorStyle::Pointer).background(
-                                    config
-                                        .color(LapceColor::PANEL_HOVERED_BACKGROUND),
-                                )
-                            })
-                            .active(|s| {
-                                s.background(config.color(
-                                    LapceColor::PANEL_HOVERED_ACTIVE_BACKGROUND,
-                                ))
-                            })
-                    }),
+                ))
+                .style(|s| {
+                    s.flex_row().width_pct(100.0).margin_top(20.0).justify_end()
+                }),
             ))
             .style(|s| s.flex_col().items_center().width_pct(100.0))
         })
@@ -148,9 +184,11 @@ pub fn alert_box(alert_data: AlertBoxData) -> impl View {
         .style(move |s| {
             let config = config.get();
             s.padding(20.0)
-                .width(250.0)
+                .width(400.0)
                 .border(1.0)
-                .border_radius(6.0)
+                .box_shadow_blur(10.0)
+                .box_shadow_color(config.color(LapceColor::LAPCE_DROPDOWN_SHADOW))
+                .border_radius(8.0)
                 .border_color(config.color(LapceColor::LAPCE_BORDER))
                 .color(config.color(LapceColor::EDITOR_FOREGROUND))
                 .background(config.color(LapceColor::PANEL_BACKGROUND))

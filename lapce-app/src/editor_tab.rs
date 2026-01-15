@@ -27,7 +27,7 @@ use crate::{
         location::EditorLocation,
     },
     id::{
-        DiffEditorId, EditorTabId, KeymapId, SettingsId, SplitId,
+        DatabaseViewId, DiffEditorId, EditorTabId, KeymapId, SettingsId, SplitId,
         ThemeColorSettingsId, VoltViewId,
     },
     main_split::{Editors, MainSplitData},
@@ -43,6 +43,7 @@ pub enum EditorTabChildInfo {
     ThemeColorSettings,
     Keymap,
     Volt(VoltID),
+    Database,
 }
 
 impl EditorTabChildInfo {
@@ -69,6 +70,9 @@ impl EditorTabChildInfo {
             EditorTabChildInfo::Keymap => EditorTabChild::Keymap(KeymapId::next()),
             EditorTabChildInfo::Volt(id) => {
                 EditorTabChild::Volt(VoltViewId::next(), id.to_owned())
+            }
+            EditorTabChildInfo::Database => {
+                EditorTabChild::Database(DatabaseViewId::next())
             }
         }
     }
@@ -131,6 +135,7 @@ pub enum EditorTabChildSource {
     ThemeColorSettings,
     Keymap,
     Volt(VoltID),
+    Database,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -141,6 +146,7 @@ pub enum EditorTabChild {
     ThemeColorSettings(ThemeColorSettingsId),
     Keymap(KeymapId),
     Volt(VoltViewId, VoltID),
+    Database(DatabaseViewId),
 }
 
 #[derive(PartialEq)]
@@ -162,6 +168,7 @@ impl EditorTabChild {
             EditorTabChild::ThemeColorSettings(id) => id.to_raw(),
             EditorTabChild::Keymap(id) => id.to_raw(),
             EditorTabChild::Volt(id, _) => id.to_raw(),
+            EditorTabChild::Database(id) => id.to_raw(),
         }
     }
 
@@ -195,6 +202,7 @@ impl EditorTabChild {
             }
             EditorTabChild::Keymap(_) => EditorTabChildInfo::Keymap,
             EditorTabChild::Volt(_, id) => EditorTabChildInfo::Volt(id.to_owned()),
+            EditorTabChild::Database(_) => EditorTabChildInfo::Database,
         }
     }
 
@@ -393,6 +401,17 @@ impl EditorTabChild {
                     icon: config.ui_svg(LapceIcons::EXTENSIONS),
                     color: Some(config.color(LapceColor::LAPCE_ICON_ACTIVE)),
                     name: display_name,
+                    path: None,
+                    confirmed: None,
+                    is_pristine: true,
+                }
+            }),
+            EditorTabChild::Database(_) => create_memo(move |_| {
+                let config = config.get();
+                EditorTabChildViewInfo {
+                    icon: config.ui_svg(LapceIcons::DATABASE),
+                    color: Some(config.color(LapceColor::LAPCE_ICON_ACTIVE)),
+                    name: "Connect to server".to_string(),
                     path: None,
                     confirmed: None,
                     is_pristine: true,

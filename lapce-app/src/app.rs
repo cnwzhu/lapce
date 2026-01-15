@@ -1390,6 +1390,12 @@ fn editor_tab_content(
             EditorTabChild::Volt(_, id) => {
                 plugin_info_view(plugin.clone(), id).into_any()
             }
+            EditorTabChild::Database(_) => {
+                crate::panel::database_editor_view::database_editor_view(
+                    window_tab_data.clone(),
+                )
+                .into_any()
+            }
         };
         child.style(|s| s.size_full())
     };
