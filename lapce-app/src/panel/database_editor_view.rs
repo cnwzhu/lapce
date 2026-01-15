@@ -11,7 +11,6 @@ use floem::{
 
 use crate::{
     config::color::LapceColor,
-    panel::kind::PanelKind,
     text_input::TextInputBuilder,
     window_tab::{Focus, WindowTabData},
 };
@@ -50,6 +49,7 @@ pub fn database_editor_view(window_tab_data: Rc<WindowTabData>) -> impl View {
             TextInputBuilder::new()
                 .build(cx, editors, common.clone())
                 .placeholder(move || placeholder_text.clone())
+                .keyboard_navigable()
                 .style(move |s| {
                     s.width_pct(100.0)
                         .padding_horiz(8.0)
@@ -242,8 +242,8 @@ pub fn database_editor_view(window_tab_data: Rc<WindowTabData>) -> impl View {
         footer,
     ))
     .on_event_cont(EventListener::PointerDown, move |_| {
-        if focus.get_untracked() != Focus::Panel(PanelKind::Database) {
-            focus.set(Focus::Panel(PanelKind::Database));
+        if focus.get_untracked() != Focus::Workbench {
+            focus.set(Focus::Workbench);
         }
     })
     .style(|s| s.flex_col().width_pct(100.0).padding(20.0).max_width(800.0));
