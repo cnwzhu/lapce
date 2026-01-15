@@ -222,7 +222,7 @@ fn middle(
                 .flex_grow(10.0)
                 .min_width(200.0)
                 .max_width(500.0)
-                .height(26.0)
+                .height(25.0)
                 .justify_content(Some(JustifyContent::Center))
                 .align_items(Some(AlignItems::Center))
                 .border(1.0)
